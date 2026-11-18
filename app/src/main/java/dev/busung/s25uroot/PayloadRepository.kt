@@ -70,6 +70,10 @@ internal fun allowedMutableRawPrefixes(source: PayloadSource): List<String> = li
     mutableRawPrefix(source.repository, source.branch),
     mutableRawPrefix(PayloadSource.DEFAULT.repository, PayloadSource.DEFAULT.branch),
     mutableRawPrefix(PayloadSource.LEGACY_REPOSITORY, PayloadSource.LEGACY_BRANCH),
+    mutableRawPrefix(
+        PayloadSource.LEGACY_RUSHIRANPISE_REPOSITORY,
+        PayloadSource.LEGACY_RUSHIRANPISE_BRANCH,
+    ),
 )
 
 /**
