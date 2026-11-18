@@ -18,7 +18,7 @@ data class UpdateInfo(
     val releaseUrl: String,
 )
 
-const val ROOT_MY_GALAXY_URL = "https://github.com/rushiranpise/Root-My-Galaxy-Next"
+const val ROOT_MY_GALAXY_URL = "https://github.com/IslamIssa1997/Root-My-Galaxy-Next"
 
 object AppUpdater {
 
@@ -32,24 +32,38 @@ object AppUpdater {
     // repository with a redirect that still works today, which is exactly why the name matters: this URL
     // decides which APK the app downloads and prompts someone to install, and a name nobody is holding is
     // a name somebody else can. The full name is what the GitHub API reports for the repository's id.
-    private const val GITHUB_API = "https://api.github.com/repos/rushiranpise/Root-My-Galaxy-Next"
+    private const val GITHUB_API = "https://api.github.com/repos/IslamIssa1997/Root-My-Galaxy-Next"
     private const val RELEASES_PAGE = "$ROOT_MY_GALAXY_URL/releases/latest"
 
     suspend fun fetchLatestRelease(): UpdateInfo? = withContext(Dispatchers.IO) {
-        try {
-            val connection = URL("$GITHUB_API/releases/latest").openConnection() as HttpURLConnection
+        // `/releases/latest` returns 404 when every release on the repository is a prerelease, which is
+        // what the CI workflow publishes - so the first call fails on this fork, and on any fork whose
+        // stable release has not been cut yet. Fall back to the full list and take the newest.
+        fetchLatestReleaseFrom("$GITHUB_API/releases/latest", singleObject = true)
+            ?: fetchLatestReleaseFrom("$GITHUB_API/releases?per_page=1", singleObject = false)
+    }
+
+    private fun fetchLatestReleaseFrom(url: String, singleObject: Boolean): UpdateInfo? {
+        return try {
+            val connection = URL(url).openConnection() as HttpURLConnection
             try {
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("User-Agent", "RootMyGalaxyNext/${BuildConfig.VERSION_NAME}")
                 connection.setRequestProperty("Accept", "application/vnd.github+json")
                 connection.connectTimeout = 10_000
                 connection.readTimeout = 10_000
-                if (connection.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
+                if (connection.responseCode != HttpURLConnection.HTTP_OK) return null
                 val body = connection.inputStream.bufferedReader().use { it.readText() }
 
-                val json = JSONObject(body)
+                val json = if (singleObject) {
+                    JSONObject(body)
+                } else {
+                    val array = org.json.JSONArray(body)
+                    if (array.length() == 0) return null
+                    array.getJSONObject(0)
+                }
                 val tag = json.optString("tag_name").trim().removePrefix("v")
-                if (tag.isBlank()) return@withContext null
+                if (tag.isBlank()) return null
                 var apkUrl: String? = null
                 json.optJSONArray("assets")?.let { assets ->
                     for (i in 0 until assets.length()) {
@@ -92,13 +106,20 @@ object AppUpdater {
 
     /** `v0.2.65+ci.42.ab12cd3` becomes `0.2.65`; null when there is no dotted number in it. */
     internal fun versionBase(version: String): String? {
-        val stripped = version.trim()
+        val cleaned = version.trim()
             .removePrefix("v")
             .substringBefore('+')
-            .substringBefore('-')
-        return stripped.takeIf { candidate ->
-            candidate.isNotEmpty() && candidate.all { it.isDigit() || it == '.' }
-        }
+        // Extract the first dotted version anywhere in the string so CI tags like `ci-1.0-60`
+        // are read as `1.0` rather than refused. Without this, an unparseable tag falls through
+        // to a string-diff "update available" prompt that fires on every fresh install of a fork.
+        val match = Regex("""(\d+(?:\.\d+)+)""").find(cleaned)
+            ?: run {
+                val plain = cleaned.substringBefore('-')
+                return plain.takeIf { candidate ->
+                    candidate.isNotEmpty() && candidate.all { it.isDigit() || it == '.' }
+                }
+            }
+        return match.value
     }
 
     /** Component-wise, so a missing part counts as zero and `0.3` beats `0.2.9`. */

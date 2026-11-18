@@ -72,15 +72,19 @@ class ArtifactPinTest {
     }
 
     @Test
-    fun theRuleNamesThreeRepositoriesAndNothingElse() {
-        // The width of the rule, written down: three repositories, each one a catalog this app ships or
-        // was copied from. A fourth would be a new place payloads can be fetched from, which is a decision
-        // and not a detail.
+    fun theRuleNamesFourRepositoriesAndNothingElse() {
+        // The width of the rule, written down: four repositories, each one a catalog this app ships or
+        // was copied from (self, default, BuSung-dev and rushiranpise - the two upstreams on this
+        // fork's lineage). A fifth would be a new place payloads can be fetched from, which is a
+        // decision and not a detail.
         val prefixes = allowedMutableRawPrefixes(source)
-        assertEquals(3, prefixes.size)
+        assertEquals(4, prefixes.size)
         prefixes.forEach { assertTrue(it, it.startsWith("https://raw.githubusercontent.com/")) }
         assertTrue(
             prefixes.any { it.contains(PayloadSource.LEGACY_REPOSITORY) },
+        )
+        assertTrue(
+            prefixes.any { it.contains(PayloadSource.LEGACY_RUSHIRANPISE_REPOSITORY) },
         )
     }
 }

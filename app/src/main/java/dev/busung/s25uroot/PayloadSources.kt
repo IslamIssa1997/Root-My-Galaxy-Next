@@ -45,7 +45,7 @@ data class PayloadSource(
          * default: a source list already saved on the device is what a run reads, and this changes
          * only what a device with no list yet starts from.
          */
-        const val DEFAULT_REPOSITORY = "rushiranpise/Root-My-Galaxy-Payloads"
+        const val DEFAULT_REPOSITORY = "IslamIssa1997/Root-My-Galaxy-Payloads"
         const val DEFAULT_BRANCH = "main"
 
         /**
@@ -60,6 +60,19 @@ data class PayloadSource(
          */
         const val LEGACY_REPOSITORY = "BuSung-dev/Root-My-Galaxy-Payloads"
         const val LEGACY_BRANCH = "main"
+
+        /**
+         * The catalog this fork was forked from, in between [LEGACY_REPOSITORY] and the current default.
+         *
+         * Same role as [LEGACY_REPOSITORY], one hop closer: this fork's feed was copied from rushiranpise's,
+         * which was copied from BuSung-dev's, and manifests dragged along by the copy still name whichever
+         * owner wrote them. Without this prefix in the allow list the reader refused rushiranpise URLs that
+         * this fork had not rebuilt yet - the `kernelsu`, `resukisu` and `kernelsu-next-test` entries - and
+         * the whole feed came back as "payload list not allowed". Nothing is fetched through the constant;
+         * see [LEGACY_REPOSITORY] for the same contract.
+         */
+        const val LEGACY_RUSHIRANPISE_REPOSITORY = "rushiranpise/Root-My-Galaxy-Payloads"
+        const val LEGACY_RUSHIRANPISE_BRANCH = "main"
 
         val COMMIT_PATTERN = Regex("^[0-9a-f]{40}$")
 
