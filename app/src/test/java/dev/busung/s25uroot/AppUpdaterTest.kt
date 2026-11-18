@@ -73,4 +73,15 @@ class AppUpdaterTest {
         assertEquals("0.2.65", AppUpdater.versionBase("0.2.65-rc1"))
         assertNull(AppUpdater.versionBase(""))
     }
+
+    @Test
+    fun versionBaseExtractsADottedVersionFromACiTag() {
+        // The CI workflow tags releases `ci-<base>-<run>`, e.g. `ci-1.0-60`. The older parser
+        // split at the first `-` and refused the tag, which left `isUpdateAvailable` on the
+        // string-diff fallback and offered an update on every fresh install.
+        assertEquals("1.0", AppUpdater.versionBase("ci-1.0-60"))
+        assertEquals("1.0.1", AppUpdater.versionBase("ci-1.0.1-3"))
+        assertFalse(AppUpdater.isUpdateAvailable("ci-1.0-60", "1.0+ci.60.abc1234"))
+        assertFalse(AppUpdater.isUpdateAvailable("ci-1.0.1-3", "1.0.1+ci.3.abc1234"))
+    }
 }

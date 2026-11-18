@@ -92,13 +92,20 @@ object AppUpdater {
 
     /** `v0.2.65+ci.42.ab12cd3` becomes `0.2.65`; null when there is no dotted number in it. */
     internal fun versionBase(version: String): String? {
-        val stripped = version.trim()
+        val cleaned = version.trim()
             .removePrefix("v")
             .substringBefore('+')
-            .substringBefore('-')
-        return stripped.takeIf { candidate ->
-            candidate.isNotEmpty() && candidate.all { it.isDigit() || it == '.' }
-        }
+        // Extract the first dotted version anywhere in the string so CI tags like `ci-1.0-60`
+        // are read as `1.0` rather than refused. Without this, an unparseable tag falls through
+        // to a string-diff "update available" prompt that fires on every fresh install of a fork.
+        val match = Regex("""(\d+(?:\.\d+)+)""").find(cleaned)
+            ?: run {
+                val plain = cleaned.substringBefore('-')
+                return plain.takeIf { candidate ->
+                    candidate.isNotEmpty() && candidate.all { it.isDigit() || it == '.' }
+                }
+            }
+        return match.value
     }
 
     /** Component-wise, so a missing part counts as zero and `0.3` beats `0.2.9`. */
