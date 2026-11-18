@@ -36,20 +36,34 @@ object AppUpdater {
     private const val RELEASES_PAGE = "$ROOT_MY_GALAXY_URL/releases/latest"
 
     suspend fun fetchLatestRelease(): UpdateInfo? = withContext(Dispatchers.IO) {
-        try {
-            val connection = URL("$GITHUB_API/releases/latest").openConnection() as HttpURLConnection
+        // `/releases/latest` returns 404 when every release on the repository is a prerelease, which is
+        // what the CI workflow publishes - so the first call fails on this fork, and on any fork whose
+        // stable release has not been cut yet. Fall back to the full list and take the newest.
+        fetchLatestReleaseFrom("$GITHUB_API/releases/latest", singleObject = true)
+            ?: fetchLatestReleaseFrom("$GITHUB_API/releases?per_page=1", singleObject = false)
+    }
+
+    private fun fetchLatestReleaseFrom(url: String, singleObject: Boolean): UpdateInfo? {
+        return try {
+            val connection = URL(url).openConnection() as HttpURLConnection
             try {
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("User-Agent", "RootMyGalaxyNext/${BuildConfig.VERSION_NAME}")
                 connection.setRequestProperty("Accept", "application/vnd.github+json")
                 connection.connectTimeout = 10_000
                 connection.readTimeout = 10_000
-                if (connection.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
+                if (connection.responseCode != HttpURLConnection.HTTP_OK) return null
                 val body = connection.inputStream.bufferedReader().use { it.readText() }
 
-                val json = JSONObject(body)
+                val json = if (singleObject) {
+                    JSONObject(body)
+                } else {
+                    val array = org.json.JSONArray(body)
+                    if (array.length() == 0) return null
+                    array.getJSONObject(0)
+                }
                 val tag = json.optString("tag_name").trim().removePrefix("v")
-                if (tag.isBlank()) return@withContext null
+                if (tag.isBlank()) return null
                 var apkUrl: String? = null
                 json.optJSONArray("assets")?.let { assets ->
                     for (i in 0 until assets.length()) {
