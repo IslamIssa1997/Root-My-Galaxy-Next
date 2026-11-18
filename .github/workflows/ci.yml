@@ -68,7 +68,7 @@ jobs:
 
           {
             echo "KEYSTORE_FILE=$KEYSTORE_PATH"
-            echo "KEYSTORE_TYPE=JKS"
+            echo "KEYSTORE_TYPE=PKCS12"
             echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
             echo "KEY_ALIAS=$KEY_ALIAS"
             echo "KEY_PASSWORD=$KEY_PASSWORD"
