@@ -14,7 +14,7 @@ class PayloadSourcesTest {
     @Test
     fun defaultSourceIsUsable() {
         assertTrue(ours.enabled)
-        assertEquals("rushiranpise/Root-My-Galaxy-Payloads@main", ours.id)
+        assertEquals("IslamIssa1997/Root-My-Galaxy-Payloads@main", ours.id)
     }
 
     @Test
