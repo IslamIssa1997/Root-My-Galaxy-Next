@@ -45,7 +45,7 @@ data class PayloadSource(
          * default: a source list already saved on the device is what a run reads, and this changes
          * only what a device with no list yet starts from.
          */
-        const val DEFAULT_REPOSITORY = "rushiranpise/Root-My-Galaxy-Payloads"
+        const val DEFAULT_REPOSITORY = "IslamIssa1997/Root-My-Galaxy-Payloads"
         const val DEFAULT_BRANCH = "main"
 
         /**
